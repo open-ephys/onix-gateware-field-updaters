@@ -1,0 +1,4 @@
+[submodule "liboni"]
+	path = liboni
+	url = git@github.com:open-ephys/liboni.git
+	branch = main
