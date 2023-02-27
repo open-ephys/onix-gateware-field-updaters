@@ -30,6 +30,7 @@
 #define REG_REBOOT 0x10
 #define REG_PROGRAM 0x20
 #define REG_PROGRAM_DATA 0x21
+#define REG_PROGRAM_SIZE 0x22
 
 #define PROG_DISABLE 0x00
 #define PROG_ENABLE 0x01
@@ -347,6 +348,26 @@ int main (int argc, char*argv[])
             oni_destroy_ctx(ctx);
             free(buf);
             exit(-1);
+        }
+
+
+        //Set the length for headstages that require it
+        int length_in_bytes = len_in_words << 2;
+        rc = oni_write_reg(ctx, dev_idx, REG_PROGRAM_SIZE, &length_in_bytes);
+        if (rc == ONI_ESUCCESS) //if this register does not exist, just ignore and continue
+        {
+            rc = oni_read_reg(ctx, dev_idx, REG_PROGRAM_SIZE, &val); //Readback and check sizes
+            if (rc != ONI_ESUCCESS || val != length_in_bytes)
+            {
+                if (rc != ONI_ESUCCESS)
+                    fprintf(stderr, "(%d) Error reading register\n", __LINE__);
+                else
+                    fprintf(stderr, "Bitfile length exceeds max supported by the device");
+                oni_destroy_ctx(ctx);
+                free(buf);
+                exit(-1);
+            }
+            
         }
         
         rc = oni_write_reg(ctx, dev_idx,REG_PROGRAM,PROG_ENABLE);
