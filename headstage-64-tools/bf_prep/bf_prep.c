@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
 		towrite -= rc;
 		written += rc;
 	} while (towrite > 0);
-	printf("Update file creation succesful\n");
+	printf("Update file creation successful\n");
 	free(filemem);
 	close(fd_out);
 	

@@ -189,7 +189,7 @@ int main (int argc, char*argv[])
         oni_destroy_ctx(ctx);
         exit(-1);
     }
-    printf("Clock frequency: %uHz\n",val);
+    printf("Clock frequency: %u Hz\n",val);
 
     //Programming mode enable
     if (!noprog)
@@ -353,7 +353,7 @@ int main (int argc, char*argv[])
 
         //Set the length for headstages that require it
         int length_in_bytes = len_in_words << 2;
-        rc = oni_write_reg(ctx, dev_idx, REG_PROGRAM_SIZE, &length_in_bytes);
+        rc = oni_write_reg(ctx, dev_idx, REG_PROGRAM_SIZE, length_in_bytes);
         if (rc == ONI_ESUCCESS) //if this register does not exist, just ignore and continue
         {
             rc = oni_read_reg(ctx, dev_idx, REG_PROGRAM_SIZE, &val); //Readback and check sizes
@@ -399,12 +399,30 @@ int main (int argc, char*argv[])
         
         while (written < len_in_words)
         {  
+
             uint32_t words;
             
             words = ((len_in_words - written) < BUF_WORDS) ? (len_in_words - written) : BUF_WORDS;
+
+            // Check FIFO to make sure its ready to receive
+            do {
+
+                rc = oni_read_reg(ctx, dev_idx, REG_PROGRAM, &val);
+
+                if (rc != ONI_ESUCCESS)
+                {
+                    fprintf(stderr, "(%d) Error reading register\n", __LINE__);
+                    oni_write_reg(ctx, dev_idx, REG_PROGRAM, PROG_DISABLE);
+                    oni_destroy_ctx(ctx);
+                    free(buf);
+                    exit(-1);
+                }
+            } while ((val & PROG_WAITDATA) == 0); //Wait until FIFO is clear to send another packet
+
+            // Write some data
             for (uint32_t i = 0; i < words; i++)
             {
-                
+
                 rc = oni_write_reg(ctx, dev_idx,REG_PROGRAM_DATA,buf[written+i]);
                 if (rc != ONI_ESUCCESS)
                 {
@@ -415,31 +433,24 @@ int main (int argc, char*argv[])
                     exit(-1);
                 }            
             }
-            do {
-                    rc = oni_read_reg(ctx, dev_idx,REG_PROGRAM,&val);
-                    if (rc != ONI_ESUCCESS)
-                    {
-                        fprintf(stderr,"(%d) Error reading register\n",__LINE__);
-                        oni_write_reg(ctx, dev_idx,REG_PROGRAM,PROG_DISABLE);
-                        oni_destroy_ctx(ctx);
-                        free(buf);
-                        exit(-1);
-                    }
-                } while ( ( val & PROG_WAITDATA) == 0); //Wait until FIFO is clear to send another packet
-                if ( (val & PROG_EROR ) != 0)
-                {
-                    printf("Error while writing flash. Aborting\n");
-                    oni_write_reg(ctx, dev_idx,REG_PROGRAM,PROG_DISABLE);
-                    oni_destroy_ctx(ctx);
-                    free(buf);
-                    exit(-1);
-                }
+
+            // Make sure we have not detected an error thus far
+            if ( (val & PROG_EROR ) != 0)
+            {
+                printf("Error while writing flash. Aborting\n");
+                oni_write_reg(ctx, dev_idx,REG_PROGRAM,PROG_DISABLE);
+                oni_destroy_ctx(ctx);
+                free(buf);
+                exit(-1);
+            }
+
             written += words;
             percent = 100*written/len_in_words;
             if (percent > last_percent)
                 printf("Writing (%d%%)\n", percent);
             last_percent = percent;
         }
+
         printf("Sent %zd bytes to programmer\n",written*sizeof(uint32_t));
         free(buf);
         rc = oni_write_reg(ctx, dev_idx,REG_PROGRAM,PROG_DISABLE);
@@ -449,7 +460,7 @@ int main (int argc, char*argv[])
             oni_destroy_ctx(ctx);
             exit(-1);
         }
-        printf("Waiting for programmer to finish\n");
+        printf("Waiting for programmer to finish (this may take a minute or two..)\n");
         do
         {
             rc = oni_read_reg(ctx, dev_idx,REG_PROGRAM,&val);
