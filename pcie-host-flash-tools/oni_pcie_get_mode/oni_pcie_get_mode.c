@@ -11,6 +11,9 @@
 #define MODE_ONI 0x03
 #define MODE_BOOTLOADER 0x02
 
+#define BOOTLOADER_HWVERSION_ADDRESS 0x0
+#define BOOTLOADER_FWVERSION_ADDRESS 0x1
+
 uint32_t read_register(fpga_t* fpga, uint32_t reg)
 {
     int res;
@@ -55,6 +58,11 @@ int main(int argc, char** argv) {
     if (mode == BOOTLOADER)
     {
         printf("Board in bootloader mode. \n");
+        data = read_register(fpga, BOOTLOADER_HWVERSION_ADDRESS);
+        uint32_t hwid = (data >> 16) & 0xFFFF;
+        uint32_t hwrev = data & 0xFFFF;
+        data = read_register(fpga, BOOTLOADER_FWVERSION_ADDRESS);
+        printf("Hardware ID: %d\n\Hardware rev: %d\nBootloader version: %d\n", hwid, hwrev, data);
 
     } else {
         printf("Board in normal operation mode. \n");
