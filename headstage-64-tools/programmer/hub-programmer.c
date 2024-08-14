@@ -236,15 +236,15 @@ int main (int argc, char*argv[])
         read_data(fd_in, &hwid, 2);
         if (hwid != hwid_dev)
         {
-            fprintf(stderr, "Invalid device type\n");
+            fprintf(stderr, "Invalid hardware type\n");
             oni_destroy_ctx(ctx);
             exit(1);
         }
 
         read_data(fd_in, &hwrev, 2);
-        if (hwrev < hwrev_dev)
+        if (hwrev != hwrev_dev)
         {
-            fprintf(stderr, "Invalid device revision\n");
+            fprintf(stderr, "Invalid hardware revision\n");
             oni_destroy_ctx(ctx);
             exit(1);
         }
