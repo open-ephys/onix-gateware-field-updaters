@@ -454,42 +454,51 @@ int main (int argc, char*argv[])
                 exit(-1);
             }
         } while ( (val & PROG_BUSY) != 0);
-        printf("Programming successful!\nRebooting headstage. Please wait.\n");
-        rc = oni_write_reg(ctx, dev_idx,REG_REBOOT,BOOT_NORMAL);
-    /*    if (rc != ONI_ESUCCESS)
-        {
-            fprintf(stderr,"(%d) Error writing register\n",__LINE__);
-            oni_destroy_ctx(ctx);
-            close(fd_in);
-            exit(-1);
-        }*/
-#ifdef _WIN32
-        Sleep(5000);
-#else
-        sleep(5);
-#endif
-        rc = oni_read_reg(ctx, dev_idx,REG_HWID,&val);
-        if (rc != ONI_ESUCCESS)
-        {
-            fprintf(stderr,"(%d) Error reading register\n",__LINE__);
-            oni_destroy_ctx(ctx);
-            exit(-1);
-        }
-        if ((val & 0x00010000) == 0)
-        {
-            printf("Reboot into new image successful!\n");
 
-            rc = oni_read_reg(ctx, dev_idx,REG_FWVER,&val);
+        if (iscrosslink)
+        {
+            printf("Programming succesful!\nPlease power-cycle the headstage to load new FW.\n");
+        }
+        else
+        {
+
+
+            printf("Programming successful!\nRebooting headstage. Please wait.\n");
+            rc = oni_write_reg(ctx, dev_idx, REG_REBOOT, BOOT_NORMAL);
+            /*    if (rc != ONI_ESUCCESS)
+                {
+                    fprintf(stderr,"(%d) Error writing register\n",__LINE__);
+                    oni_destroy_ctx(ctx);
+                    close(fd_in);
+                    exit(-1);
+                }*/
+#ifdef _WIN32
+            Sleep(5000);
+#else
+            sleep(5);
+#endif
+            rc = oni_read_reg(ctx, dev_idx, REG_HWID, &val);
             if (rc != ONI_ESUCCESS)
             {
-                fprintf(stderr,"(%d) Error reading register\n",__LINE__);
+                fprintf(stderr, "(%d) Error reading register\n", __LINE__);
                 oni_destroy_ctx(ctx);
                 exit(-1);
             }
-            printf("New firmware version: 0x%04X\n",val&0xFFFF);
+            if ((val & 0x00010000) == 0)
+            {
+                printf("Reboot into new image successful!\n");
+
+                rc = oni_read_reg(ctx, dev_idx, REG_FWVER, &val);
+                if (rc != ONI_ESUCCESS)
+                {
+                    fprintf(stderr, "(%d) Error reading register\n", __LINE__);
+                    oni_destroy_ctx(ctx);
+                    exit(-1);
+                }
+                printf("New firmware version: 0x%04X\n", val & 0xFFFF);
+            }
+            else printf("Error booting into new firmware. Safe image loaded. Check the firmware file and try again.\n");
         }
-        else printf("Error booting into new firmware. Safe image loaded. Check the firmware file and try again.\n");
-         
     }
     oni_destroy_ctx(ctx);
     
