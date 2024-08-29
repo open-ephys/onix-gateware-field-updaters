@@ -30,6 +30,7 @@
 #define REG_REBOOT 0x10
 #define REG_PROGRAM 0x20
 #define REG_PROGRAM_DATA 0x21
+#define REG_PROGRAM_SIZE 0x22 //Only in crosslink-based devices
 
 #define PROG_DISABLE 0x00
 #define PROG_ENABLE 0x01
@@ -349,6 +350,9 @@ int main (int argc, char*argv[])
             exit(-1);
         }
         
+        //We don't care if this fails, as this is not present in max10-based devices
+        oni_write_reg(ctx, dev_idx, REG_PROGRAM_SIZE, (len_in_words<<2));
+
         rc = oni_write_reg(ctx, dev_idx,REG_PROGRAM,PROG_ENABLE);
         if (rc != ONI_ESUCCESS)
         {
