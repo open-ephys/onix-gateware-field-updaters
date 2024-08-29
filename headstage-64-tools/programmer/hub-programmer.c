@@ -39,6 +39,8 @@
 #define PROG_EROR 0x08
 #define PROG_FULL 0x10
 
+#define PROGX_DONE 0x100
+
 #define BOOT_NORMAL 0x01
 #define BOOT_SAFE 0x03
 
@@ -111,6 +113,7 @@ int main (int argc, char*argv[])
     int last_percent = -1;
     oni_ctx ctx = NULL;
     uint16_t hwid, hwid_dev, hwrev, hwrev_dev, fwver, fwver_dev;
+    int iscrosslink = 0;
     
     if (argc < 3)
     {
@@ -351,7 +354,15 @@ int main (int argc, char*argv[])
         }
         
         //We don't care if this fails, as this is not present in max10-based devices
-        oni_write_reg(ctx, dev_idx, REG_PROGRAM_SIZE, (len_in_words<<2));
+        rc = oni_write_reg(ctx, dev_idx, REG_PROGRAM_SIZE, (len_in_words<<2));
+        if (rc != ONI_ESUCCESS)
+        {
+            iscrosslink = 0;
+        }
+        else
+        {
+            iscrosslink = 1;
+        }
 
         rc = oni_write_reg(ctx, dev_idx,REG_PROGRAM,PROG_ENABLE);
         if (rc != ONI_ESUCCESS)
@@ -408,7 +419,7 @@ int main (int argc, char*argv[])
                         free(buf);
                         exit(-1);
                     }
-                } while ( ( val & PROG_WAITDATA) == 0); //Wait until FIFO is clear to send another packet
+                } while ( (( val & PROG_WAITDATA) == 0) || (iscrosslink && (val & PROGX_DONE) != 0)); //Wait until FIFO is clear to send another packet
                 if ( (val & PROG_EROR ) != 0)
                 {
                     printf("Error while writing flash. Aborting\n");
