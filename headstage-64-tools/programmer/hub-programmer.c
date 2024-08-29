@@ -39,7 +39,7 @@
 #define PROG_EROR 0x08
 #define PROG_FULL 0x10
 
-#define PROGX_DONE 0x100
+#define PROGX_DONE 0x10000
 
 #define BOOT_NORMAL 0x01
 #define BOOT_SAFE 0x03
