@@ -419,7 +419,7 @@ int main (int argc, char*argv[])
                         free(buf);
                         exit(-1);
                     }
-                } while ( (( val & PROG_WAITDATA) == 0) || (iscrosslink && (val & PROGX_DONE) != 0)); //Wait until FIFO is clear to send another packet
+                } while ( (( val & PROG_WAITDATA) == 0) && (!iscrosslink || (val & PROGX_DONE) == 0)); //Wait until FIFO is clear to send another packet or done is set in a crosslink device
                 if ( (val & PROG_EROR ) != 0)
                 {
                     printf("Error while writing flash. Aborting\n");
