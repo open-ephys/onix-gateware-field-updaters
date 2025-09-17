@@ -2,7 +2,7 @@
 * ONIX hub bitfile preparation software
 * Written by: Aarón Cuevas López
 * 
-* This software prepares an ONI hub bitfile by
+* This software prepares an ONIX headstage bitfile by
 * - Trimming all excess empty space at the end of the file
 * - Creating a header
 * 
