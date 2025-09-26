@@ -12,8 +12,8 @@ Where,
 
 - `hardware_id`: ONIX hardware ID in hex format
 - `min_hardware_rev`: Minimum hardware version required to accept the new
-   fimrware version
-- `firmware_version`: The version of the firmware being prepared
+   firmware version in hex format
+- `firmware_version`: The version of the firmware being prepared in hex format
 
 For example,
 
