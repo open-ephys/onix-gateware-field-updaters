@@ -34,6 +34,7 @@
             // 
             // searchFileButton
             // 
+            searchFileButton.CausesValidation = false;
             searchFileButton.Location = new Point(514, 48);
             searchFileButton.Margin = new Padding(3, 4, 3, 4);
             searchFileButton.Name = "searchFileButton";
@@ -59,6 +60,8 @@
             fileNameTextBox.Name = "fileNameTextBox";
             fileNameTextBox.Size = new Size(368, 31);
             fileNameTextBox.TabIndex = 0;
+            fileNameTextBox.KeyDown += fileNameTextBox_KeyDown;
+            fileNameTextBox.Validating += fileNameTextBox_Validating;
             // 
             // groupBox1
             // 

@@ -17,7 +17,9 @@ namespace CSHubUpdater
 
         IHubBitFile bitFile;
         CancellationTokenSource loadCancellationToken;
-        readonly SemaphoreSlim loadSemaphore = new(1,1);
+        readonly SemaphoreSlim loadSemaphore = new(1, 1);
+        bool enterAction = false;
+        string lastPath = string.Empty;
 
         public UpdaterApp()
         {
@@ -29,25 +31,27 @@ namespace CSHubUpdater
             portComboBox.SelectedIndex = 0;
         }
 
-        async void searchFileButton_Click(object sender, EventArgs e)
+        void searchFileButton_Click(object sender, EventArgs e)
         {
-            string initialPath;
-            string writtenPath;
+            string initialPath = string.Empty;
             try
             {
-                writtenPath = Path.GetDirectoryName(fileNameTextBox.Text);
+                if (!string.IsNullOrEmpty(fileNameTextBox.Text))
+                {
+                    if (Directory.Exists(fileNameTextBox.Text))
+                    {
+                        initialPath = fileNameTextBox.Text;
+                    }
+                    else
+                    {
+                        initialPath = Path.GetDirectoryName(fileNameTextBox.Text);
+                    }
+                }
             }
+
             catch (ArgumentException)
             {
-                writtenPath = null;
-            }
-            if (!string.IsNullOrEmpty(writtenPath) && Directory.Exists(writtenPath))
-            {
-                initialPath = writtenPath;
-            }
-            else
-            {
-                initialPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+     
             }
 
             using OpenFileDialog dialog = new();
@@ -60,13 +64,15 @@ namespace CSHubUpdater
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 fileNameTextBox.Text = dialog.FileName;
-                await LoadBitFile();
+                _ = LoadBitFile();
             }
 
         }
 
         async Task LoadBitFile()
         {
+            if (lastPath == fileNameTextBox.Text) return;
+            lastPath = fileNameTextBox.Text;
             bitFile = null;
             programButton.Enabled = false;
             try
@@ -104,11 +110,11 @@ namespace CSHubUpdater
                 hwRevTextBox.Text = string.Empty;
                 fwVerTextBox.Text = string.Empty;
             }
-           
-            
+
+
         }
 
-        private async void programButton_Click(object sender, EventArgs e)
+        private void programButton_Click(object sender, EventArgs e)
         {
             Enabled = false;
 
@@ -134,6 +140,26 @@ namespace CSHubUpdater
                 loadCancellationToken?.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        private void fileNameTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                enterAction = true;
+                e.SuppressKeyPress = true;
+                SelectNextControl((Control)sender, true, true, true, true);
+                _ = LoadBitFile();
+                enterAction = false;
+            }
+        }
+
+        private void fileNameTextBox_Validating(object sender, CancelEventArgs e)
+        {
+            if (!enterAction)
+            {
+                _ = LoadBitFile();
+            }
         }
     }
 }

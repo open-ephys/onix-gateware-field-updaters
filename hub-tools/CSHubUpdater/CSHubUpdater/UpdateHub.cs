@@ -65,16 +65,21 @@ namespace CSHubUpdater
             cancelButton.Enabled = true;
             isUpdating = false;
             UseWaitCursor = false;
+            programButton.Enabled = true;
             if (hub.SafeFirmware)
             {
                 MessageBox.Show("Hub booted into backup firmware. This implies a failed update. " +
                     "Please try again or contact support", "Update failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                programButton.Enabled = true;
+            }
+            else if (hub.FwVersion != bitfile.FwVer)
+            {
+                MessageBox.Show("Incorrect firmware version detected in hub. This implies a failed update. " +
+                    "Please try again or contact support", "Update failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             else
             {
                 MessageBox.Show("Hub update successful", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                cancelButton.Text = "Close";
+                Close();
             }
         }
 
