@@ -110,26 +110,16 @@ namespace CSHubUpdater
 
         private async void programButton_Click(object sender, EventArgs e)
         {
-           Enabled = false;
-            try
-            {
-                using var hub = await HubConnection.CreateFromHubInfoAsync("riffa", 0, portComboBox.SelectedIndex, bitFile.HubId);
-                if (hub.HwRevision != bitFile.HwRevision)
-                {
-                    throw new ArgumentException($"Hardware recision mismatch. File expected {bitFile.HwRevision} Hardware reported {hub.HwRevision}");
-                }
-                UpdateHub updater = new(hub, bitFile);
-                updater.ShowDialog();
+            Enabled = false;
 
-            }
-            catch (Exception ex)
+            using (UpdateHub updater = new(bitFile, portComboBox.SelectedIndex))
             {
-                MessageBox.Show(ex.Message, "Failure to open hardware", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                updater.ShowDialog();
             }
-            finally
-            {
-                Enabled = true;
-            }
+
+
+            Enabled = true;
+
         }
 
         /// <summary>
