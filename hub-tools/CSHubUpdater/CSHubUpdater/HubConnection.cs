@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace CSHubUpdater
 {
-    internal abstract class HubConnection(string driver, int index, int portIndex) : IDisposable, IHubConnection, INotifyPropertyChanged
+    internal abstract class HubConnection(string driver, int index, int portIndex) : IHubConnection, INotifyPropertyChanged
     {
         readonly oni.Context context = new(driver, index);
         readonly uint hubDeviceAddr = (((uint)portIndex + 1) << 8) + 254;
@@ -29,7 +29,7 @@ namespace CSHubUpdater
         public ushort FwVersion { get; private set; }
 
         const int MaxWriteWords = 16;
-        const int TimeoutMs = 2000;
+        const int TimeoutMs = 5000;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -123,37 +123,46 @@ namespace CSHubUpdater
         {
             return Task.Factory.StartNew(() =>
             {
-                using var cancellation = new CancellationTokenSource();
-                progress.Report(0);
-                var data = MemoryMarshal.Cast<byte, uint>(file.Data.Span);
-                WriteProgrammer(ProgrammingStatus.DISABLE);
-                if (ReadProgrammer().HasFlag(ProgrammingStatus.BUSY))
+                try
                 {
-                    throw new IOException("Programmer in busy state. Try again in a few seconds or reboot the device");
-                }
-                bool isCrossLink = CheckCrossLinkAndSetSize(file.Data.Length);
-                WriteProgrammer(ProgrammingStatus.ENABLE);
-                ProgrammingStatus status;
-                if (WaitProgrammer(cancellation, TimeoutMs).HasFlag(ProgrammingStatus.ERROR))
-                {
-                    throw new IOException("Error while clearing flash.");
-                }
-
-                int written = 0;
-                while (written < data.Length)
-                {
-                    int toWrite = Math.Min(data.Length - written, MaxWriteWords);
-                    for (int i = 0; i < toWrite; i++)
+                    using var cancellation = new CancellationTokenSource();
+                    progress.Report(0);
+                    var data = MemoryMarshal.Cast<byte, uint>(file.Data.Span);
+                    WriteProgrammer(ProgrammingStatus.DISABLE);
+                    if (ReadProgrammer().HasFlag(ProgrammingStatus.BUSY))
                     {
-                        WriteProgrammerData(data[written++]);
+                        throw new IOException("Programmer in busy state. Try again in a few seconds or reboot the device");
                     }
-                    WaitProgrammer(cancellation, TimeoutMs, isCrossLink);
-                    progress.Report(written);
+                    bool isCrossLink = CheckCrossLinkAndSetSize(file.Data.Length);
+                    WriteProgrammer(ProgrammingStatus.ENABLE);
+                    if (WaitProgrammer(cancellation, TimeoutMs).HasFlag(ProgrammingStatus.ERROR))
+                    {
+                        throw new IOException("Error while clearing flash.");
+                    }
 
+                    int written = 0;
+                    while (written < data.Length)
+                    {
+                        int toWrite = Math.Min(data.Length - written, MaxWriteWords);
+                        for (int i = 0; i < toWrite; i++)
+                        {
+                            WriteProgrammerData(data[written++]);
+                        }
+                        if (WaitProgrammer(cancellation, TimeoutMs, isCrossLink).HasFlag(ProgrammingStatus.ERROR))
+                        {
+                            throw new IOException("Error while writing flash.");
+                        }
+                        progress.Report(written);
+
+                    }
+
+                    WriteProgrammer(ProgrammingStatus.DISABLE);
+                    WaitBusy(cancellation, TimeoutMs);
                 }
-
-                WriteProgrammer(ProgrammingStatus.DISABLE);
-                WaitBusy(cancellation, TimeoutMs);
+                catch (OperationCanceledException)
+                {
+                    throw new IOException("Operation Timeout");
+                }
 
 
 

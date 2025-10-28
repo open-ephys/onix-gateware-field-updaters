@@ -256,6 +256,7 @@
             // 
             // programButton
             // 
+            programButton.Enabled = false;
             programButton.Location = new Point(12, 247);
             programButton.Name = "programButton";
             programButton.Size = new Size(112, 34);
@@ -266,6 +267,7 @@
             // 
             // cancelButton
             // 
+            cancelButton.Enabled = false;
             cancelButton.Location = new Point(239, 247);
             cancelButton.Name = "cancelButton";
             cancelButton.Size = new Size(112, 34);

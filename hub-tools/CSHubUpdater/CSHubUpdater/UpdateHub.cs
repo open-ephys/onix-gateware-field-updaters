@@ -13,7 +13,7 @@ namespace CSHubUpdater
 {
     public partial class UpdateHub : Form
     {
-        readonly IHubConnection hub;
+         IHubConnection hub;
         readonly IHubBitFile bitfile;
         bool isUpdating = false;
         int portIndex;
@@ -33,14 +33,16 @@ namespace CSHubUpdater
         {
             isUpdating = true;
             cancelButton.Enabled = false;
-            programButton.Enabled = true;
+            programButton.Enabled = false;
             progressUpdate.Value = 0;
             // NB: Last 10% will be resetting the headstage
             int maxValue = (int)((bitfile.Data.Length / 4) / 0.9);
+            progressUpdate.Maximum = maxValue;
             Progress<int> progress = new(value =>
             {
                 progressUpdate.Value = value;
             });
+            UseWaitCursor = true;
             try
             {
                 await hub.UpdateFirmware(bitfile, progress);
@@ -56,11 +58,13 @@ namespace CSHubUpdater
             catch (Exception ex)
             {
                 isUpdating = false;
-                Close();
                 MessageBox.Show(ex.Message, "Failure while updating", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Close();
+                return;
             }
             cancelButton.Enabled = true;
             isUpdating = false;
+            UseWaitCursor = false;
             if (hub.SafeFirmware)
             {
                 MessageBox.Show("Hub booted into backup firmware. This implies a failed update. " +
@@ -81,9 +85,11 @@ namespace CSHubUpdater
 
         private async void UpdateHub_Load(object sender, EventArgs e)
         {
+            UseWaitCursor = true;
             try
             {
-                var hub = await HubConnection.CreateFromHubInfoAsync("riffa", 0, portIndex, bitfile.HubId);
+                hub = await HubConnection.CreateFromHubInfoAsync("riffa", 0, portIndex, bitfile.HubId);
+                //hub = await VirtualHubTest.CreateFromHubInfoAsync("riffa", 0, portIndex, bitfile.HubId);
                 if (hub.HwRevision != bitfile.HwRevision)
                 {
                     throw new ArgumentException($"Hardware recision mismatch. File expected {bitfile.HwRevision} Hardware reported {hub.HwRevision}");
@@ -103,9 +109,15 @@ namespace CSHubUpdater
             }
             catch (Exception ex)
             {
+                // NB: Close connection quickly here to avoid potential hs damage
+                hub.Dispose();
+                hub = null;
                 MessageBox.Show(ex.Message, "Failure to open hardware", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
             }
+            programButton.Enabled = true;
+            cancelButton.Enabled = true;
+            UseWaitCursor = false;
         }
     }
 }

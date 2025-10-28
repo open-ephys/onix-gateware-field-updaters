@@ -1,7 +1,7 @@
 ﻿
 namespace CSHubUpdater
 {
-    public interface IHubConnection
+    public interface IHubConnection : IDisposable
     {
         ushort FwVersion { get; }
         ushort HubId { get; }
@@ -9,7 +9,6 @@ namespace CSHubUpdater
         double Voltage { get; }
         bool SafeFirmware { get; }
         ushort SafeFwVersion { get; }
-        void Dispose();
         Task RestartHeadstage();
         Task UpdateFirmware(IHubBitFile file, IProgress<int> progress);
     }
