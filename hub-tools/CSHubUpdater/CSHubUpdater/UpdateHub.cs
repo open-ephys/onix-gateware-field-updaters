@@ -115,7 +115,7 @@ namespace CSHubUpdater
             catch (Exception ex)
             {
                 // NB: Close connection quickly here to avoid potential hs damage
-                hub.Dispose();
+                hub?.Dispose();
                 hub = null;
                 MessageBox.Show(ex.Message, "Failure to open hardware", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
