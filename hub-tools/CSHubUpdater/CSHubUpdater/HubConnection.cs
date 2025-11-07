@@ -235,11 +235,13 @@ namespace CSHubUpdater
                 if (attr.ID != hubId) return false;
                 return t.IsClass && !t.IsAbstract && typeof(HubConnection).IsAssignableFrom(t);
             }) ?? throw new ArgumentException($"Hub ID not supported {hubId}");
+            HubConnection? hub = null;
 
-            var hub = Activator.CreateInstance(deviceType, [driver, index, portIndex]) as HubConnection
-                ?? throw new ArgumentException($"Unknown error initializating hub id {hubId}");
             try
             {
+                hub = Activator.CreateInstance(deviceType, [driver, index, portIndex]) as HubConnection
+                ?? throw new ArgumentException($"Unknown error initializating hub id {hubId}");
+            
                 await hub.Init();
                 if (hub.HubId != hubId)
                 {
@@ -247,9 +249,14 @@ namespace CSHubUpdater
                     throw new ArgumentException($"Invalid Hub detected. Expected {hubId}, Reported {hub.HubId}");
                 }
             }
+            catch (TargetInvocationException e)
+            {
+                hub?.Dispose(); // This should always be null in this case, but just in case
+                throw e.InnerException ?? e;
+            }
             catch (Exception)
             {
-                hub.Dispose();
+                hub?.Dispose();
                 throw;
             }
             return hub;
