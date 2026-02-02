@@ -12,18 +12,22 @@ namespace CSHubUpdater
     {
         protected override async Task<double?> PowerHub()
         {
-            
+            const double ChargeVoltage = 10.0;
             const double MinVoltage = 3.3;
-            const double MaxVoltage = 6.0;
-            const double VoltageOffset = 3.4;
+            const double MaxVoltage = 6.5;
             const double VoltageIncrement = 0.2;
 
-            await Task.Delay(1000);
+            SetVoltage(0.0);
+            Thread.Sleep(1000);
+
+            SetVoltage(ChargeVoltage);
+            Thread.Sleep(10);
+
             double voltage = MaxVoltage;
             for (; voltage >= MinVoltage; voltage -= VoltageIncrement)
             {
                 SetVoltage(voltage);
-                await Task.Delay(200);
+                Thread.Sleep(200);
                 if (!CheckLinkState())
                 {
                     if (voltage == MaxVoltage)
@@ -32,12 +36,14 @@ namespace CSHubUpdater
                     }
                     else break;
                 }
-
             }
+
             SetVoltage(MinVoltage);
+            Thread.Sleep(100);
             SetVoltage(0);
             await Task.Delay(1000);
-            voltage += VoltageOffset;
+
+            voltage += 0.4 * voltage + 2.0; // NB: Empirical from tethers of different lengths in order to get 5.0V to 5.3V at headstage
             SetVoltage(voltage);
             await Task.Delay(200);
             return CheckLinkState() ? voltage : null;
