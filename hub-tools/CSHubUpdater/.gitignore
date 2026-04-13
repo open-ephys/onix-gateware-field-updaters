@@ -1,0 +1,5 @@
+!*.cs
+!*.csproj
+!*.csproj.user
+!*.resx
+!*.ico
